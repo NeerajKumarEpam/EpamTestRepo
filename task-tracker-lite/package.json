@@ -1,0 +1,15 @@
+{
+  "name": "task-tracker-lite",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "install:all": "npm --prefix backend install && npm --prefix frontend install && npm --prefix e2e install",
+    "migrate": "npm --prefix backend run migrate",
+    "dev:backend": "npm --prefix backend run dev",
+    "dev:frontend": "npm --prefix frontend run dev",
+    "test:e2e": "npm --prefix e2e test",
+    "test:e2e:report": "npm --prefix e2e run test:report",
+    "build:frontend": "npm --prefix frontend run build",
+    "start:backend": "npm --prefix backend start"
+  }
+}
