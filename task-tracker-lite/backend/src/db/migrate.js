@@ -1,7 +1,7 @@
 
 import fs from 'fs';
 import path from 'path';
-import { openDb, run, get } from './sqlite.js';
+import { openDb, run, get, dbPath } from './sqlite.js';
 
 const migrationsDir = path.join(process.cwd(), 'migrations');
 
@@ -28,7 +28,22 @@ async function applyMigration(db, id, sql) {
 }
 
 async function main() {
-  const db = openDb();
+  if (!fs.existsSync(migrationsDir)) {
+    console.error(`Migrations directory not found: ${migrationsDir}`);
+    process.exit(1);
+  }
+
+  console.log(`Using SQLite database file: ${dbPath}`);
+
+  let db;
+  try {
+    db = openDb();
+  } catch (err) {
+    console.error(`Failed to open SQLite database at ${dbPath}`);
+    console.error(err);
+    process.exit(1);
+  }
+
   await ensureSchemaMigrations(db);
 
   const files = fs.readdirSync(migrationsDir)

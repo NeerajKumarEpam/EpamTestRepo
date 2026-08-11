@@ -1,15 +1,25 @@
 
 import { test, expect } from '@playwright/test';
 
+async function clearTasks(page) {
+  const response = await page.request.get('/api/tasks');
+  const body = await response.json();
+  for (const task of body.tasks || []) {
+    await page.request.delete(`/api/tasks/${task.id}`);
+  }
+}
+
 async function createTask(page, { title, description = 'desc', status = 'Todo', dueDate = '' }) {
-  await page.getByLabel('Title').fill(title);
-  await page.getByLabel('Description').fill(description);
-  await page.getByLabel('Status').selectOption({ label: status });
-  if (dueDate) await page.getByLabel('Due date').fill(dueDate);
-  await page.getByLabel('Save').click();
+  await page.getByLabel('Title', { exact: true }).fill(title);
+  await page.getByLabel('Description', { exact: true }).fill(description);
+  await page.getByLabel('Status', { exact: true }).selectOption({ label: status });
+  if (dueDate) await page.getByLabel('Due date', { exact: true }).fill(dueDate);
+  await page.getByLabel('Save', { exact: true }).click();
+  await expect(page.locator('tr', { hasText: title }).first()).toBeVisible();
 }
 
 test.beforeEach(async ({ page }) => {
+  await clearTasks(page);
   await page.goto('/');
 });
 

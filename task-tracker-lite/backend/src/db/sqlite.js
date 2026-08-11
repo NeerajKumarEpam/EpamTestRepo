@@ -1,10 +1,14 @@
 
 import sqlite3 from 'sqlite3';
+import fs from 'fs';
 import path from 'path';
 
-const dbPath = process.env.SQLITE_DB_PATH || path.join(process.cwd(), 'data', 'task_tracker.sqlite');
+export const dbPath = process.env.SQLITE_DB_PATH || path.join(process.cwd(), 'data', 'task_tracker.sqlite');
 
 export function openDb() {
+  const dbDir = path.dirname(dbPath);
+  if (!fs.existsSync(dbDir)) fs.mkdirSync(dbDir, { recursive: true });
+
   sqlite3.verbose();
   return new sqlite3.Database(dbPath);
 }
