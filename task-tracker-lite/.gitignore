@@ -1,0 +1,18 @@
+
+# dependencies
+node_modules/
+
+# sqlite data
+backend/data/
+*.sqlite
+
+# build artifacts
+frontend/dist/
+
+# playwright artifacts
+e2e/playwright-report/
+e2e/test-results/
+e2e/.cache/
+
+# logs
+*.log
