@@ -37,11 +37,12 @@ jobs:
         uses: anthropics/claude-code-action@v1
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-          direct_prompt: |
+          prompt: |
             Use the sdlc-development skill for pull request #${{ steps.pr.outputs.number }}
             in NeerajKumarEpam/EpamTestRepo. Follow the skill's task and output contract
             exactly, then print the required JSON gate block.
-          allowed_tools: "Bash,Read,Grep,Glob"
+          claude_args: |
+            --allowedTools Bash,Read,Grep,Glob
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
