@@ -8,26 +8,42 @@ on:
         required: true
   issue_comment:
     types: [created]
+  workflow_run:
+    workflows: ["SDLC Gate G6 - Testing"]
+    types: [completed]
 
 permissions:
   contents: read
   pull-requests: write
   issues: write
+  actions: read
 
 jobs:
   build-deploy-gate:
     if: >
       github.event_name == 'workflow_dispatch' ||
-      (github.event.issue.pull_request != null && contains(github.event.comment.body, '/sdlc-build-deploy'))
+      (github.event.issue.pull_request != null && contains(github.event.comment.body, '/sdlc-build-deploy')) ||
+      (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
+      - name: Download PR context from Testing gate
+        if: github.event_name == 'workflow_run'
+        uses: actions/download-artifact@v4
+        with:
+          name: pr-context
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: pr-context
 
       - name: Resolve PR number
         id: pr
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             echo "number=${{ inputs.pr_number }}" >> "$GITHUB_OUTPUT"
+          elif [ "${{ github.event_name }}" = "workflow_run" ]; then
+            echo "number=$(cat pr-context/pr_number.txt)" >> "$GITHUB_OUTPUT"
           else
             echo "number=${{ github.event.issue.number }}" >> "$GITHUB_OUTPUT"
           fi
@@ -57,3 +73,16 @@ jobs:
           name: frontend-dist
           path: task-tracker-lite/frontend/dist/
           retention-days: 30
+
+      - name: Enforce gate result
+        run: |
+          if [ ! -f gate-result.json ]; then
+            echo "gate-result.json was not written; treating gate G7 as failed"
+            exit 1
+          fi
+          approved=$(jq -r '.approved' gate-result.json)
+          echo "Gate G7 approved: $approved"
+          if [ "$approved" != "true" ]; then
+            echo "Gate G7 was not approved"
+            exit 1
+          fi

@@ -32,7 +32,9 @@ gate inside the CodeMie SDLC Workflow. It now runs directly against
 
 ## Output
 
-Always finish by printing this JSON block:
+Always finish by printing this JSON block, and also write the same JSON to
+`gate-result.json` in the current working directory (CI uses this file to decide
+whether to chain into the next gate):
 
 ```json
 {

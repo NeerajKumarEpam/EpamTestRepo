@@ -43,3 +43,27 @@ jobs:
           allowed_tools: "Bash,Read,Grep,Glob"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Enforce gate result
+        run: |
+          if [ ! -f gate-result.json ]; then
+            echo "gate-result.json was not written; treating gate G4 as failed"
+            exit 1
+          fi
+          approved=$(jq -r '.approved' gate-result.json)
+          echo "Gate G4 approved: $approved"
+          if [ "$approved" != "true" ]; then
+            echo "Gate G4 was not approved; failing so downstream gates do not run"
+            exit 1
+          fi
+
+      - name: Publish PR context for downstream gates
+        run: |
+          mkdir -p pr-context
+          echo "${{ steps.pr.outputs.number }}" > pr-context/pr_number.txt
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pr-context
+          path: pr-context/
+          retention-days: 1

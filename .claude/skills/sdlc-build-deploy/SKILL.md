@@ -47,7 +47,8 @@ https://neerajkumarepam.atlassian.net/wiki/spaces/Epam/pages/2555906/Task+Tracke
 
 ## Output
 
-Always finish by printing this JSON block:
+Always finish by printing this JSON block, and also write the same JSON to
+`gate-result.json` in the current working directory:
 
 ```json
 {
