@@ -1,0 +1,108 @@
+name: SDLC Gate G6 - Testing
+
+on:
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: "Pull request number this test run relates to"
+        required: true
+  issue_comment:
+    types: [created]
+  workflow_run:
+    workflows: ["SDLC Gate G4 - Development"]
+    types: [completed]
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+  actions: read
+
+jobs:
+  testing-gate:
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.issue.pull_request != null && contains(github.event.comment.body, '/sdlc-testing')) ||
+      (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success')
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download PR context from Development gate
+        if: github.event_name == 'workflow_run'
+        uses: actions/download-artifact@v4
+        with:
+          name: pr-context
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: pr-context
+
+      - name: Resolve PR number
+        id: pr
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "number=${{ inputs.pr_number }}" >> "$GITHUB_OUTPUT"
+          elif [ "${{ github.event_name }}" = "workflow_run" ]; then
+            echo "number=$(cat pr-context/pr_number.txt)" >> "$GITHUB_OUTPUT"
+          else
+            echo "number=${{ github.event.issue.number }}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+
+      - name: Install dependencies
+        working-directory: task-tracker-lite
+        run: npm run install:all
+
+      - name: Install Playwright browsers
+        working-directory: task-tracker-lite/e2e
+        run: npm run install:browsers
+
+      - name: Run SDLC Testing gate via Claude
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          direct_prompt: |
+            Use the sdlc-testing skill for pull request #${{ steps.pr.outputs.number }}
+            in NeerajKumarEpam/EpamTestRepo. Follow the skill's task and output contract
+            exactly, then print the required JSON gate block.
+          allowed_tools: "Bash,Read,Grep,Glob"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ATLASSIAN_SITE_URL: ${{ secrets.ATLASSIAN_SITE_URL }}
+          ATLASSIAN_EMAIL: ${{ secrets.ATLASSIAN_EMAIL }}
+          ATLASSIAN_API_TOKEN: ${{ secrets.ATLASSIAN_API_TOKEN }}
+
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: playwright-report
+          path: task-tracker-lite/e2e/playwright-report/
+          retention-days: 30
+
+      - name: Enforce gate result
+        run: |
+          if [ ! -f gate-result.json ]; then
+            echo "gate-result.json was not written; treating gate G6 as failed"
+            exit 1
+          fi
+          approved=$(jq -r '.approved' gate-result.json)
+          echo "Gate G6 approved: $approved"
+          if [ "$approved" != "true" ]; then
+            echo "Gate G6 was not approved; failing so downstream gates do not run"
+            exit 1
+          fi
+
+      - name: Publish PR context for downstream gates
+        run: |
+          mkdir -p pr-context
+          echo "${{ steps.pr.outputs.number }}" > pr-context/pr_number.txt
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pr-context
+          path: pr-context/
+          retention-days: 1

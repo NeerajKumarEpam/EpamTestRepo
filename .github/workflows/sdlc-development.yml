@@ -1,0 +1,69 @@
+name: SDLC Gate G4 - Development
+
+on:
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: "Pull request number to post completion notes to"
+        required: true
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+jobs:
+  development-gate:
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.issue.pull_request != null && contains(github.event.comment.body, '/sdlc-development'))
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Resolve PR number
+        id: pr
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "number=${{ inputs.pr_number }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "number=${{ github.event.issue.number }}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Run SDLC Development gate via Claude
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          direct_prompt: |
+            Use the sdlc-development skill for pull request #${{ steps.pr.outputs.number }}
+            in NeerajKumarEpam/EpamTestRepo. Follow the skill's task and output contract
+            exactly, then print the required JSON gate block.
+          allowed_tools: "Bash,Read,Grep,Glob"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Enforce gate result
+        run: |
+          if [ ! -f gate-result.json ]; then
+            echo "gate-result.json was not written; treating gate G4 as failed"
+            exit 1
+          fi
+          approved=$(jq -r '.approved' gate-result.json)
+          echo "Gate G4 approved: $approved"
+          if [ "$approved" != "true" ]; then
+            echo "Gate G4 was not approved; failing so downstream gates do not run"
+            exit 1
+          fi
+
+      - name: Publish PR context for downstream gates
+        run: |
+          mkdir -p pr-context
+          echo "${{ steps.pr.outputs.number }}" > pr-context/pr_number.txt
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pr-context
+          path: pr-context/
+          retention-days: 1

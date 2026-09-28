@@ -1,0 +1,88 @@
+name: SDLC Gate G7 - Build_And_Deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: "Pull request number this build/deploy verification relates to"
+        required: true
+  issue_comment:
+    types: [created]
+  workflow_run:
+    workflows: ["SDLC Gate G6 - Testing"]
+    types: [completed]
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+  actions: read
+
+jobs:
+  build-deploy-gate:
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.issue.pull_request != null && contains(github.event.comment.body, '/sdlc-build-deploy')) ||
+      (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download PR context from Testing gate
+        if: github.event_name == 'workflow_run'
+        uses: actions/download-artifact@v4
+        with:
+          name: pr-context
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: pr-context
+
+      - name: Resolve PR number
+        id: pr
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "number=${{ inputs.pr_number }}" >> "$GITHUB_OUTPUT"
+          elif [ "${{ github.event_name }}" = "workflow_run" ]; then
+            echo "number=$(cat pr-context/pr_number.txt)" >> "$GITHUB_OUTPUT"
+          else
+            echo "number=${{ github.event.issue.number }}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+
+      - name: Run SDLC Build_And_Deploy gate via Claude
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          direct_prompt: |
+            Use the sdlc-build-deploy skill for pull request #${{ steps.pr.outputs.number }}
+            in NeerajKumarEpam/EpamTestRepo. Follow the skill's task and output contract
+            exactly, then print the required JSON gate block.
+          allowed_tools: "Bash,Read,Grep,Glob"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ATLASSIAN_SITE_URL: ${{ secrets.ATLASSIAN_SITE_URL }}
+          ATLASSIAN_EMAIL: ${{ secrets.ATLASSIAN_EMAIL }}
+          ATLASSIAN_API_TOKEN: ${{ secrets.ATLASSIAN_API_TOKEN }}
+
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: frontend-dist
+          path: task-tracker-lite/frontend/dist/
+          retention-days: 30
+
+      - name: Enforce gate result
+        run: |
+          if [ ! -f gate-result.json ]; then
+            echo "gate-result.json was not written; treating gate G7 as failed"
+            exit 1
+          fi
+          approved=$(jq -r '.approved' gate-result.json)
+          echo "Gate G7 approved: $approved"
+          if [ "$approved" != "true" ]; then
+            echo "Gate G7 was not approved"
+            exit 1
+          fi
