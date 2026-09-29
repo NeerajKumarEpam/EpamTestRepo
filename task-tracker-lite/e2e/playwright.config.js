@@ -17,8 +17,8 @@ export default defineConfig({
       reuseExistingServer: true,
     },
     {
-      command: 'npm --prefix ../frontend run dev -- --host=127.0.0.1 --port=5175',
-      port: 5175,
+      command: 'npm --prefix ../frontend run dev -- --host=127.0.0.1 --port=5173',
+      port: 5173,
       timeout: 120_000,
       reuseExistingServer: true,
     },
