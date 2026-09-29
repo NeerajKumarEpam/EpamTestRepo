@@ -33,6 +33,9 @@ jobs:
             echo "number=${{ github.event.issue.number }}" >> "$GITHUB_OUTPUT"
           fi
 
+      # claude-code-action skips itself if this file's content on the current ref
+      # doesn't match the copy on the default branch, so gate runs only work
+      # for real once this workflow file is merged to main.
       - name: Run SDLC Development gate via Claude
         uses: anthropics/claude-code-action@v1
         with:
