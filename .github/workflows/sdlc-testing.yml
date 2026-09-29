@@ -67,11 +67,11 @@ jobs:
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           prompt: |
-            Use the sdlc-testing skill for pull request #${{ steps.pr.outputs.number }}
-            in NeerajKumarEpam/EpamTestRepo. Follow the skill's task and output contract
+            Use the sdlc-testing agent for pull request #${{ steps.pr.outputs.number }}
+            in NeerajKumarEpam/EpamTestRepo. Follow the agent's task and output contract
             exactly, then print the required JSON gate block.
           claude_args: |
-            --allowedTools Bash,Read,Grep,Glob
+            --allowedTools Bash,Read,Grep,Glob,Task
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           ATLASSIAN_SITE_URL: ${{ secrets.ATLASSIAN_SITE_URL }}
