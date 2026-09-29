@@ -53,18 +53,6 @@ jobs:
         with:
           node-version: lts/*
 
-      - name: Check required secrets
-        run: |
-          missing=()
-          [ -z "${{ secrets.ANTHROPIC_API_KEY }}" ] && missing+=("ANTHROPIC_API_KEY")
-          [ -z "${{ secrets.ATLASSIAN_SITE_URL }}" ] && missing+=("ATLASSIAN_SITE_URL")
-          [ -z "${{ secrets.ATLASSIAN_EMAIL }}" ] && missing+=("ATLASSIAN_EMAIL")
-          [ -z "${{ secrets.ATLASSIAN_API_TOKEN }}" ] && missing+=("ATLASSIAN_API_TOKEN")
-          if [ ${#missing[@]} -gt 0 ]; then
-            echo "::error::Missing required secret(s): ${missing[*]}"
-            exit 1
-          fi
-
       - name: Run SDLC Build_And_Deploy gate via Claude
         uses: anthropics/claude-code-action@v1
         with:
