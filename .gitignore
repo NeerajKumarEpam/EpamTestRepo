@@ -6,3 +6,8 @@ node_modules/
 /blob-report/
 /playwright/.cache/
 /playwright/.auth/
+
+# CodeMie scratch/session artifacts
+.codemie-scratch-*.md
+.codemie-scratch/
+docs/codemie/
