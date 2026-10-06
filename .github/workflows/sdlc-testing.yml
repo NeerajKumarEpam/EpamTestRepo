@@ -62,6 +62,10 @@ jobs:
         working-directory: task-tracker-lite/e2e
         run: npm run install:browsers
 
+      - name: Run database migrations
+        working-directory: task-tracker-lite
+        run: npm run migrate
+
       - name: Run SDLC Testing gate via Claude
         uses: anthropics/claude-code-action@v1
         with:
