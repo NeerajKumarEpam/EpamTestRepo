@@ -95,6 +95,52 @@ The project uses Playwright's HTML reporter to capture execution results in a re
 
 This makes it easy to review pass/fail details, user-flow validation, and troubleshooting artifacts after each run.
 
+## Code Coverage Goal
+The project aims to maintain strong confidence in the task management workflows through automated validation, with a target of at least 80% statement coverage for the core backend and UI logic covered by the main task flows.
+
+Coverage focus areas:
+
+- task creation and validation;
+- task updates and deletion;
+- search and filtering logic;
+- overdue state detection and highlighting;
+- API error handling for invalid or missing records.
+
+This target is intentionally aligned with the real user journeys validated by Playwright tests so that regressions in task handling are caught early before release.
+
+## Security Scanning
+Security scanning should be treated as a standard part of release readiness for this application. The project uses a lightweight task-management stack, but the same principles apply: validate dependencies, review exposed endpoints, and confirm that user input is handled safely.
+
+Recommended checks:
+
+- scan npm dependencies for known vulnerabilities;
+- verify no sensitive data is committed to the repository or SQLite data files;
+- validate API request payloads before database writes;
+- review frontend form handling for unsafe input and improper trust boundaries;
+- confirm the backend enforces expected validation for task creation and updates.
+
+This is especially important for any future expansion of the application to authentication, user roles, or external integrations.
+
+## Observation / Logging
+Operational visibility is important for both local development and release validation. The application includes a simple health endpoint and basic API-level behavior that can be monitored during testing and troubleshooting.
+
+Key observation points:
+
+- backend health endpoint: `GET /api/health`;
+- task API responses for create, update, delete, and list actions;
+- validation failures such as missing title or invalid task ID;
+- database and runtime issues that surface through Express error responses;
+- Playwright execution logs and HTML reports for end-to-end validation outcomes.
+
+Recommended logging practices:
+
+- capture startup and shutdown messages for the backend service;
+- log task mutations and validation failures during development;
+- keep browser test reports in the Playwright output folder for root-cause analysis;
+- review failed E2E runs to confirm whether issues are UI, API, or data-related.
+
+This ensures that defects are easier to diagnose and that quality signals remain visible throughout the SDLC.
+
 ## SDLC gates run directly by Claude
 
 The Development (G4), Testing (G6), and Build_And_Deploy (G7) gates of the Task
