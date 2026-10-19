@@ -16,7 +16,7 @@ Plan proposed. Human approval is required before development begins.
 | IP-6 | P1 | Validate customization frontmatter, hook JSON/output, links, and required PR sections. | IP-3, IP-4, IP-5 | Focused validation completes; observed output is captured in verification. | Done |
 | IP-7 | P2 | Review final diff and record code/config review findings. | IP-6 | `output/code-review.md` contains checklist and findings. | Done; no blocking findings |
 | IP-8 | P2 | Prepare changelog and PR description with test evidence. | IP-6, IP-7 | Both artifacts have required sections; no claim is unsupported. | Done |
-| IP-9 | P2 | Create PR as requested in the capstone workflow. | IP-8 | PR URL and CI evidence recorded. | In progress |
+| IP-9 | P2 | Create PR as requested in the capstone workflow. | IP-8 | PR URL and CI evidence recorded. | Blocked: GitHub CLI is unauthenticated and the configured PR token lacks permission (403) |
 
 ## Dependency outline
 
@@ -25,7 +25,8 @@ IP-1 -> IP-2 -> (IP-3, IP-4, IP-5) -> IP-6 -> IP-7 -> IP-8 -> IP-9
 ```
 
 IP-3, IP-4, and IP-5 are independent after IP-2. The user requested completion
-of the capstone PR step; PR creation is in progress after local validation.
+of the capstone PR step, but it is blocked until GitHub write authorization is
+available.
 
 ## Scope boundaries
 
