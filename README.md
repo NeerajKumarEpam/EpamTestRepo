@@ -173,3 +173,23 @@ The PR number is handed forward between gates as an uploaded `pr-context`
 artifact. Documentation (G8) in CodeMie still requires a manual resume once
 Build_And_Deploy completes — there is currently no scriptable way to resume a
 paused CodeMie workflow run from outside its own UI/session.
+
+## GitHub Copilot Agentic SDLC
+
+The repository also includes a GitHub Copilot Agent Mode workflow for the
+Automated Documentation Sync capstone:
+
+- `.github/agents/` contains the SDLC orchestrator and stage-specific agents.
+- `.github/skills/agentic-sdlc/SKILL.md` describes the end-to-end workflow.
+- `.github/copilot-instructions.md` and `.github/instructions/` provide shared
+  project guidance.
+- `.github/hooks/` adds a session-start reminder that points agents to the
+  workflow and its artifacts.
+- `output/` stores the requirements, architecture, review, implementation plan,
+  code review, verification evidence, changelog, and PR description.
+
+Start with the `agentic-sdlc` agent and provide a Jira issue, Confluence page,
+or local user-story document. Each phase must preserve source traceability and
+pause for human approval at the documented gates. The initial capstone story is
+[COD-15](https://neerajkumarepam.atlassian.net/browse/COD-15), linked to the
+existing [COD-1 epic](https://neerajkumarepam.atlassian.net/browse/COD-1).
